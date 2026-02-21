@@ -16,7 +16,12 @@ def setup_tokenizer(model_name: str, src_lang: str, custom_tgt_token: str):
         tokenizer.add_special_tokens({"additional_special_tokens": [custom_tgt_token]})
     return tokenizer
 
-def maybe_init_custom_token_embeddings(model, tokenizer, custom_tgt_token: str, proxy_lang_token: str):
+def maybe_init_custom_token_embeddings(
+        model,
+        tokenizer,
+        custom_tgt_token: str,
+        proxy_lang_token: str
+    ):
     """
     Initializes the custom token embedding weights using a proxy token embedding if available.
     """
@@ -30,10 +35,20 @@ def maybe_init_custom_token_embeddings(model, tokenizer, custom_tgt_token: str, 
     try:
         if proxy_id is not None and proxy_id != tokenizer.unk_token_id:
             with torch.no_grad():
-                if hasattr(model, "model") and hasattr(model.model, "encoder") and hasattr(model.model.encoder, "embed_tokens"):
-                    model.model.encoder.embed_tokens.weight[custom_id] = model.model.encoder.embed_tokens.weight[proxy_id].clone()
-                if hasattr(model, "model") and hasattr(model.model, "decoder") and hasattr(model.model.decoder, "embed_tokens"):
-                    model.model.decoder.embed_tokens.weight[custom_id] = model.model.decoder.embed_tokens.weight[proxy_id].clone()
+                if (
+                    hasattr(model, "model") and
+                    hasattr(model.model, "encoder") and
+                    hasattr(model.model.encoder, "embed_tokens")
+                    ):
+                    encoder_embed_tokens = model.model.encoder.embed_tokens.weight[proxy_id].clone()
+                    model.model.encoder.embed_tokens.weight[custom_id] = encoder_embed_tokens
+                if (
+                    hasattr(model, "model") and
+                    hasattr(model.model, "decoder") and
+                    hasattr(model.model.decoder, "embed_tokens")
+                ):
+                    decoder_embed_tokens = model.model.decoder.embed_tokens.weight[proxy_id].clone()
+                    model.model.decoder.embed_tokens.weight[custom_id] = decoder_embed_tokens
     except Exception:
         # if anything fails, we keep random init (still works, just a bit noisier)
         pass
@@ -41,7 +56,9 @@ def maybe_init_custom_token_embeddings(model, tokenizer, custom_tgt_token: str, 
 def preprocess_batch(tokenizer, examples, max_length: int, custom_tgt_token: str):
     """
     Preprocesses a batch of examples by tokenizing the source and target texts. The target texts are
-    prepended with a custom target token to steer the decoder. The tokenized inputs and labels are returned in a format suitable for model training. Optional fields for NSL (is_negative, severity) are also propagated if present in the examples.
+    prepended with a custom target token to steer the decoder. The tokenized inputs and labels are returned in a format suitable for 
+    model training. Optional fields for 
+    NSL (is_negative, severity) are also propagated if present in the examples.
     """
     src = [str(x) for x in examples["src_text"]]
     # prepend target token to steer decoder

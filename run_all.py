@@ -1,13 +1,14 @@
 """
-Runs the full training and evaluation pipeline for both baseline and NSL models. This script loads the 
-data, sets up the tokenizer and model, trains the models, evaluates on the dev and test sets, saves 
-metrics and plots, and exports predictions. The results are saved in the experiments/ directory with a 
-timestamped subdirectory for each run. Finally, it builds a summary comparison CSV for the test 
-metrics of both models.
+Runs the full training and evaluation pipeline for both baseline and NSL models. 
+This script loads the data, sets up the tokenizer and model, trains the models, 
+evaluates on the dev and test sets, saves metrics and plots, and exports predictions.
+The results are saved in the experiments/ directory with a 
+timestamped subdirectory for each run. 
+Finally, it builds a summary comparison CSV for the test metrics of both models.
 """
-import os
-import gc
 from pathlib import Path
+import gc
+import numpy as np
 
 import torch
 import pandas as pd
@@ -51,7 +52,6 @@ def export_predictions(trainer, tokenizer, dataset, out_csv: str, custom_tgt_tok
     decoded = tokenizer.batch_decode(pred_ids, skip_special_tokens=True)
 
     # decode references
-    import numpy as np
     labels = preds.label_ids
     labels = np.where(labels != -100, labels, tokenizer.pad_token_id)
     refs = tokenizer.batch_decode(labels, skip_special_tokens=True)
@@ -128,7 +128,12 @@ def run_experiment(cfg_path: str, mode: str):
         return preprocess_batch(tokenizer, examples, int(cfg.max_length), cfg.custom_tgt_token)
 
     remove_cols = dsd["train"].column_names
-    tokenized = dsd.map(tok_fn, batched=True, remove_columns=remove_cols, desc=f"Tokenizing ({exp_name})")
+    tokenized = dsd.map(
+        tok_fn,
+        batched=True,
+        remove_columns=remove_cols,
+        desc=f"Tokenizing ({exp_name})"
+    )
 
     train_ds = tokenized["train"]
     dev_ds = tokenized["dev"]

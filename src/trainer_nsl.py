@@ -1,7 +1,8 @@
 """
 Trainer class for NSL-style training. This extends the Seq2SeqTrainer from HuggingFace Transformers 
-and overrides the compute_loss method to apply different weighting to negative examples based on their 
-severity. The alpha parameter controls how much the loss for negative examples is scaled down.
+and overrides the compute_loss method to apply different weighting to negative examples based on 
+their severity. 
+The alpha parameter controls how much the loss for negative examples is scaled down.
 """
 import torch
 from transformers import Seq2SeqTrainer
@@ -46,7 +47,11 @@ class NSLTrainer(Seq2SeqTrainer):
             weights = torch.ones_like(loss_per_example)
             neg_mask = (is_negative == 1).float()
             # weights = 1 for positive, alpha*severity for negative
-            weights = (1.0 - neg_mask) + neg_mask * (self.alpha * severity.to(loss_per_example.device))
+            weights = (
+                    (1.0 - neg_mask) +
+                    neg_mask *
+                    (self.alpha * severity.to(loss_per_example.device))
+                )
             loss = (loss_per_example * weights).mean()
         else:
             loss = loss_per_example.mean()
