@@ -1,0 +1,27 @@
+experiment_name: baseline
+model_name: facebook/nllb-200-distilled-600M
+
+max_length: 256
+num_train_epochs: 6
+learning_rate: 3e-5
+weight_decay: 0.01
+warmup_ratio: 0.1
+lr_scheduler_type: cosine
+
+per_device_train_batch_size: 4
+per_device_eval_batch_size: 8
+gradient_accumulation_steps: 4
+
+label_smoothing_factor: 0.1
+generation_num_beams: 2
+generation_max_length: 256
+
+early_stopping_patience: 2
+save_total_limit: 2
+logging_steps: 50
+seed: 42
+
+# language / token strategy
+src_lang: spa_Latn
+custom_tgt_token: ">>yine_Latn<<"
+proxy_lang_token: "quy_Latn"
